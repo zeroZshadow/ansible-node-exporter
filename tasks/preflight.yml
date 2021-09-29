@@ -98,13 +98,12 @@
 - block:
     - name: Get checksum list from github
       set_fact:
-        _checksums: "{{ lookup('url', 'https://github.com/prometheus/node_exporter/releases/download/v' + node_exporter_version + '/sha256sums.txt', wantlist=True) }}"
+        _checksum: "{{ lookup('url', 'https://github.com/prometheus/node_exporter/releases/download/v' + node_exporter_version + '/sha256sums.txt', wantlist=True) | list | regex_search('linux-' + go_arch + '.tar.gz') | select('string') }}"
+      failed_when: _checksum | count != 1
 
     - name: "Get checksum for {{ go_arch }} architecture"
       set_fact:
-        node_exporter_checksum: "{{ line.split(' ')[0] }}"
-      vars:
-        line: "{{ _checksums | regex_search('linux-' + go_arch + '.tar.gz') | first }}"
+        node_exporter_checksum: "{{ _checksum.split(' ')[0] }}"
   when: node_exporter_binary_local_dir | length == 0
   delegate_to: localhost
   run_once: true
